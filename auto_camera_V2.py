@@ -129,6 +129,8 @@ def capture(dir ='roll', target_angle = 30):
         ml_img_ORIG = cv2.resize(img_bgr, (512, 512)) # bgr
         ml_img = cv2.resize(gray, (512, 512)) # gray
         
+        cv2.imwrite(img_name[:len(img_name)-4] + '_ORIG.png', ml_img_ORIG)
+        
         [crater_path, crater_contour] = crater_detection(img_name, ml_img_ORIG, ml_img)
         path_finding(img_name, ml_img_ORIG, crater_path, crater_contour);
         

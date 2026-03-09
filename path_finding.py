@@ -4,20 +4,15 @@ import cv2
 import matplotlib.pyplot as plt
 
 def get_POI(ml_img_ORIG, combined_crater_img_path, img_path, contours): # Get points of interest
+    print(combined_crater_img_path)
     combined_crater_img = cv2.imread(combined_crater_img_path)
 
     # Get original point of interest
     hsv = cv2.cvtColor(ml_img_ORIG, cv2.COLOR_BGR2HSV)
-    lower_red1 = np.array([0, 100, 100])
-    upper_red1 = np.array([10, 255, 255])
-    lower_red2 = np.array([170, 100, 100])
-    upper_red2 = np.array([180, 255, 255])
     lower_orange = np.array([11, 100, 100])
     upper_orange = np.array([25, 255, 255])
 
-    POI_mask_red = cv2.inRange(hsv, lower_red1, upper_red1) | \
-               cv2.inRange(hsv, lower_red2, upper_red2) | \
-               cv2.inRange(hsv, lower_orange, upper_orange)
+    POI_mask_red = cv2.inRange(hsv, lower_orange, upper_orange)
                
     # Dilate mask to make it bigger than boundary
     kernel = np.ones((12, 12), np.uint8)
