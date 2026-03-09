@@ -5,17 +5,7 @@ import matplotlib.pyplot as plt
 
 def get_POI(ml_img_ORIG, combined_crater_img_path, img_path, contours): # Get points of interest
     combined_crater_img = cv2.imread(combined_crater_img_path)
-    plt.figure(figsize=(6, 6))
-    plt.imshow(ml_img_ORIG)
-    plt.title("img")
-    plt.axis("off")
-    plt.show()
-    plt.figure(figsize=(6, 6))
-    plt.imshow(combined_crater_img)
-    plt.title("craters")
-    plt.axis("off")
-    plt.show()
-    
+
     # Get original point of interest
     hsv = cv2.cvtColor(ml_img_ORIG, cv2.COLOR_BGR2HSV)
     lower_red1 = np.array([0, 100, 100])
@@ -193,8 +183,7 @@ def plot_path(mask_red, mask_green, file_path, img_path):
     else:
         print("No path found")
         
-def path_finding(orig_img_path, crater_img_path, crater_contour): # path to marked up image with craters    
-    ml_img_ORIG = cv2.imread(orig_img_path)
+def path_finding(orig_img_path, ml_img_ORIG, crater_img_path, crater_contour): # path to marked up image with craters    
     # print(crater_img_path)
     path_arr = orig_img_path.split('/')
     img_name = path_arr[len(path_arr) - 1].split('.')[0] + '_combined_craters_and_POI.png'
