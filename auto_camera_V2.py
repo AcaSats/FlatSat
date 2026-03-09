@@ -33,7 +33,7 @@ picam2.start()
 #VARIABLES
 THRESHOLD = 3               # Any desired value from the accelerometer
 REPO_PATH = "/home/cubesat/Documents/CubeSat/"      # Your github repo path: ex. /home/pi/FlatSatChallenge
-FOLDER_PATH = "Images"      # Your image folder path in your GitHub repo: ex. /Images
+FOLDER_PATH = "New_Images"      # Your image folder path in your GitHub repo: ex. /Images
 
 def git_push():
     """
@@ -115,25 +115,7 @@ def capture(dir ='roll', target_angle = 30):
         #  f"GyroX:{gyroX:6.2f} GyroY:{gyroY:6.2f} GyroZ:{gyroZ:6.2f}")
         
         #if dir == 'roll' and abs(roll_angle - target_angle) < 3:
-        img_name = take_photo();
-        
-        img_bgr = cv2.imread(img_name)
-        if img_bgr is None:
-            raise ValueError("Could not load the image.")
-        
-        # Turn the image into grayscale
-        img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
-        gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
-        
-        # image in grayscale and bgr
-        ml_img_ORIG = cv2.resize(img_bgr, (512, 512)) # bgr
-        ml_img = cv2.resize(gray, (512, 512)) # gray
-        
-        cv2.imwrite(img_name[:len(img_name)-4] + '_ORIG.png', ml_img_ORIG)
-        
-        [crater_path, crater_contour] = crater_detection(img_name, ml_img_ORIG, ml_img)
-        path_finding(img_name, ml_img_ORIG, crater_path, crater_contour);
-        
+        take_photo();
         git_push()
         
         time.sleep(20);
