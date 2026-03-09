@@ -179,19 +179,19 @@ def plot_path(mask_red, mask_green, file_path, img_path):
         print("No path found")
         
 def path_finding(orig_img_path, crater_img_path, crater_contour): # path to marked up image with craters    
+    ml_img_ORIG = cv2.imread(orig_img_path)
     # print(crater_img_path)
-    path_arr = crater_img_path.split('/')
+    path_arr = orig_img_path.split('/')
     img_name = path_arr[len(path_arr) - 1].split('.')[0] + '_combined_craters_and_POI.png'
-    combined_POI_path = path_arr[:len(crater_img_path.split('/'))-1]
+    combined_POI_path = path_arr[:len(orig_img_path.split('/'))-1]
     combined_POI_path = '/'.join(combined_POI_path)
     combined_POI_path += '/' + img_name
-    get_POI(orig_img_path, crater_img_path, combined_POI_path, crater_contour)
+    get_POI(ml_img_ORIG, crater_img_path, combined_POI_path, crater_contour)
     
     [mask_red, mask_green] = process_img(combined_POI_path)
     
-    path_arr = crater_img_path.split('/')
     img_name = path_arr[len(path_arr) - 1].split('.')[0] + '_path.png'
-    file_path_to_path = path_arr[:len(crater_img_path.split('/'))-1]
+    file_path_to_path = path_arr[:len(orig_img_path.split('/'))-1]
     file_path_to_path = '/'.join(file_path_to_path)
     file_path_to_path += '/' + img_name
     
