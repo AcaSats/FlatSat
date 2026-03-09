@@ -15,10 +15,10 @@ def get_POI(ml_img_ORIG, combined_crater_img_path, img_path, contours): # Get po
     POI_mask_red = cv2.inRange(hsv, lower_orange, upper_orange)
                
     # Dilate mask to make it bigger than boundary
-    kernel = np.ones((12, 12), np.uint8)
-    dilated_mask = cv2.dilate(POI_mask_red, kernel, iterations=1)
-    orig_POI_contour, _ = cv2.findContours(dilated_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    print(orig_POI_contour)
+    #kernel = np.ones((12, 12), np.uint8)
+    #dilated_mask = cv2.dilate(POI_mask_red, kernel, iterations=1)
+    orig_POI_contour, _ = cv2.findContours(POI_mask_red, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    print(len(orig_POI_contour))
 
     if (len(orig_POI_contour) < 2): # if not two points of interest, search for largest crater
         # Find point of interest (biggest circled boundary)
