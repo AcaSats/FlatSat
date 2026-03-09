@@ -11,10 +11,13 @@ def get_POI(ml_img_ORIG, combined_crater_img_path, img_path, contours): # Get po
     upper_red1 = np.array([10, 255, 255])
     lower_red2 = np.array([170, 100, 100])
     upper_red2 = np.array([180, 255, 255])
+    lower_orange = np.array([11, 100, 100])
+    upper_orange = np.array([25, 255, 255])
 
     POI_mask_red = cv2.inRange(hsv, lower_red1, upper_red1) | \
-               cv2.inRange(hsv, lower_red2, upper_red2)
-
+               cv2.inRange(hsv, lower_red2, upper_red2) | \
+               cv2.inRange(hsv, lower_orange, upper_orange)
+               
     # Dilate mask to make it bigger than boundary
     kernel = np.ones((12, 12), np.uint8)
     dilated_mask = cv2.dilate(POI_mask_red, kernel, iterations=1)
