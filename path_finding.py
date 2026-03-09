@@ -2,6 +2,43 @@ import heapq
 import numpy as np
 import cv2
 
+def get_POI(ml_img_ORIG, combined_crater_img_path, img_path, contours): # Get points of interest
+    combined_crater_img = cv2.imread(combined_crater_img_path)
+    
+    # Get original point of interest
+    hsv = cv2.cvtColor(ml_img_ORIG, cv2.COLOR_BGR2HSV)
+    lower_red1 = np.array([0, 100, 100])
+    upper_red1 = np.array([10, 255, 255])
+    lower_red2 = np.array([170, 100, 100])
+    upper_red2 = np.array([180, 255, 255])
+
+    POI_mask_red = cv2.inRange(hsv, lower_red1, upper_red1) | \
+               cv2.inRange(hsv, lower_red2, upper_red2)
+
+    # Dilate mask to make it bigger than boundary
+    kernel = np.ones((12, 12), np.uint8)
+    dilated_mask = cv2.dilate(POI_mask_red, kernel, iterations=1)
+    orig_POI_contour, _ = cv2.findContours(dilated_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    if (len(orig_POI_contour) < 2): # if not two points of interest, search for largest crater
+        # Find point of interest (biggest circled boundary)
+        largest_contour = max(contours, key=cv2.contourArea)
+
+        # Dilate contour to make it bigger than boundary
+        mask = np.zeros((combined_crater_img.shape[0], combined_crater_img.shape[1]), dtype=np.uint8)
+        cv2.drawContours(mask, [largest_contour], -1, 255, thickness=-1) 
+        kernel = np.ones((3, 3), np.uint8)
+        dilated_mask = cv2.dilate(mask, kernel, iterations=1)
+        new_contours, _ = cv2.findContours(dilated_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        new_largest_contour = max(new_contours, key=cv2.contourArea)
+
+        point_of_interest = ml_img_ORIG.copy()
+        cv2.drawContours(combined_crater_img, [new_largest_contour], -1, (0, 0, 255), -1)
+
+    # Draw point of interest on top
+    cv2.drawContours(combined_crater_img, orig_POI_contour, -1, (0, 0, 255), -1)
+    cv2.imwrite(img_path, combined_crater_img)
+
 def line_of_sight(p1, p2, grid):
     x1, y1 = p1
     x2, y2 = p2
@@ -84,9 +121,12 @@ def process_img(img_path):
     upper_red1 = np.array([10, 255, 255])
     lower_red2 = np.array([170, 100, 100])
     upper_red2 = np.array([180, 255, 255])
+    lower_orange = np.array([11, 100, 100])
+    upper_orange = np.array([25, 255, 255])
 
     mask_red = cv2.inRange(hsv, lower_red1, upper_red1) | \
-               cv2.inRange(hsv, lower_red2, upper_red2) # likely craters
+               cv2.inRange(hsv, lower_red2, upper_red2) | \
+               cv2.inRange(hsv, lower_orange, upper_orange) # likely craters
 
     # Green mask to find obstacles
     lower_green = np.array([40, 40, 40])
@@ -138,16 +178,23 @@ def plot_path(mask_red, mask_green, file_path, img_path):
     else:
         print("No path found")
         
-def path_finding(img_path): # path to marked up image with craters
-    print(img_path)
-    [mask_red, mask_green] = process_img(img_path)
+def path_finding(orig_img_path, crater_img_path, crater_contour): # path to marked up image with craters    
+    # print(crater_img_path)
+    path_arr = crater_img_path.split('/')
+    img_name = path_arr[len(path_arr) - 1].split('.')[0] + '_combined_craters_and_POI.png'
+    combined_POI_path = path_arr[:len(crater_img_path.split('/'))-1]
+    combined_POI_path = '/'.join(combined_POI_path)
+    combined_POI_path += '/' + img_name
+    get_POI(orig_img_path, crater_img_path, combined_POI_path, crater_contour)
     
-    path_arr = img_path.split('/')
-    img_name = path_arr[len(path_arr) - 1].split('.')[0] + '_path.png'
-    file_path_to_path = path_arr[:len(img_path.split('/'))-1]
+    [mask_red, mask_green] = process_img(combined_POI_path)
+    
+    path_arr = crater_img_path.split('/')
+    img_name = path_arr[len(path_arr) - 1].split('.')[0] + '_combined_craters_and_POI.png'
+    file_path_to_path = path_arr[:len(crater_img_path.split('/'))-1]
     file_path_to_path = '/'.join(file_path_to_path)
     file_path_to_path += '/' + img_name
     
-    plot_path(mask_red, mask_green, file_path_to_path, img_path);
+    plot_path(mask_red, mask_green, file_path_to_path, combined_POI_path);
     
     

@@ -67,6 +67,7 @@ def extract_crater_features(ml_img, ml_edges, candidates):
 
 def train_detection(X, valid_candidates, img, path_for_new_img):
     X = np.array(X)
+    crater_lst = []
     #print(X)
     if len(X) < 10:
         print("Not enough candidates to train. Try lowering Hough param2 or minRadius.")
@@ -95,30 +96,57 @@ def train_detection(X, valid_candidates, img, path_for_new_img):
         print(classification_report(y_test, pred, digits=3))
 
         scores = clf.predict_proba(scaler.transform(X))[:, 1]
-        #crater_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        crater_img = img.copy()
 
         score_thresh = np.percentile(scores, 75)
         for (x, y0, r), score in zip(valid_candidates, scores):
             if score >= score_thresh:
-                cv2.circle(img, (x, y0), r, (0, 255, 0), 2)
+                crater_lst.append([x, y0, r])
+                cv2.circle(crater_img, (x, y0), r, (0, 255, 0), 2)
 
-        cv2.imwrite(path_for_new_img, img)
+        cv2.imwrite(path_for_new_img, crater_img)
+        return crater_lst
     else:
         print("Not enough labeled data to train. Try adjusting thresholds or Hough settings.")
+        return []
         
-def crater_detection(img_path):
-    img_bgr = cv2.imread(img_path)
-    if img_bgr is None:
-        raise ValueError("Could not load the image.")
+def group_craters(crater_lst, ml_img, ml_img_ORIG, img_path): # group overlapping circles together
+    OFFSET = 3
+    combined_crater_lst = []
+    row = 0
+    for i in range(0, len(crater_lst)):
+        if not crater_lst[i] in combined_crater_lst:
+            combined_crater_lst.append([crater_lst[i]])
+            crater_x = [crater_lst[i][0] - crater_lst[i][2] - OFFSET, crater_lst[i][0] + crater_lst[i][2] + OFFSET]
+            crater_y = [crater_lst[i][1] - crater_lst[i][2] - OFFSET, crater_lst[i][1] + crater_lst[i][2] + OFFSET]
+            for m in range(i+1, len(crater_lst)):
+                new_crater_x = [crater_lst[m][0] - crater_lst[m][2] - OFFSET, crater_lst[m][0] + crater_lst[m][2] + OFFSET]
+                new_crater_y = [crater_lst[m][1] - crater_lst[m][2] - OFFSET, crater_lst[m][1] + crater_lst[m][2] + OFFSET]
+                # print(crater_x, crater_y)
+                # print(new_crater_x, new_crater_y)
+                # print(((crater_x[1] > new_crater_x[0] and crater_x[0] < new_crater_x[1]) or (crater_x[0] < new_crater_x[1] and crater_x[1] > new_crater_x[0])) and ((crater_y[1] > new_crater_y[0] and crater_y[0] < new_crater_y[1]) or (crater_y[0] < new_crater_y[1] and crater_y[1] > new_crater_y[0])))
+                if ((crater_x[1] > new_crater_x[0] and crater_x[0] < new_crater_x[1]) or (crater_x[0] < new_crater_x[1] and crater_x[1] > new_crater_x[0])) and ((crater_y[1] > new_crater_y[0] and crater_y[0] < new_crater_y[1]) or (crater_y[0] < new_crater_y[1] and crater_y[1] > new_crater_y[0])):
+                    combined_crater_lst[row].append(crater_lst[m])
+        row += 1
     
-    # Turn the image into grayscale
-    img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
-    gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+    combined_crater_img = ml_img_ORIG.copy()
+    mask = np.zeros_like(ml_img, dtype=np.uint8)
+    for crater_group in combined_crater_lst:
+        for x,y,r in crater_group:
+            cv2.circle(mask, (int(x), int(y)), int(r), 255, -1)  # filled circle
+        
+    kernel = np.ones((7,7), np.uint8) # add a boundary
+    mask = cv2.dilate(mask, kernel, iterations=1)
+
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    cv2.drawContours(combined_crater_img, contours, -1, (0, 255, 0), 2)
+    cv2.imwrite(img_path, combined_crater_img)
     
-    # CLAHE processing, blur image, and create an edge map
-    ml_img = cv2.resize(img_bgr, (512, 512)) # gray
-    ml_img_gray = cv2.resize(gray, (512, 512))
-    ml_clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8)).apply(ml_img_gray)
+    return contours
+
+def crater_detection(img_path, ml_img_ORIG, ml_img):
+    ml_clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8)).apply(ml_img)
     ml_blur = cv2.GaussianBlur(ml_clahe, (9, 9), 0)
 
     v = np.median(ml_blur)
@@ -126,15 +154,21 @@ def crater_detection(img_path):
     high = int(min(255, (1.0 + 0.33) * v))
     ml_edges = cv2.Canny(ml_blur, low, high)
     
-    candidates = crater_candidates(ml_img, ml_img_gray, ml_blur, high)
-    [features, valid_candidates] = extract_crater_features(ml_img_gray, ml_edges, candidates)
+    candidates = crater_candidates(ml_img_ORIG, ml_img, ml_blur, high)
+    [features, valid_candidates] = extract_crater_features(ml_img, ml_edges, candidates)
     
     path_arr = img_path.split('/')
     img_name = path_arr[len(path_arr) - 1].split('.')[0] + '_craters.png'
     crater_path = path_arr[:len(img_path.split('/'))-1]
     crater_path = '/'.join(crater_path)
     crater_path += '/' + img_name
-    train_detection(features, valid_candidates, ml_img, crater_path)
+    crater_lst = train_detection(features, valid_candidates, ml_img_ORIG, crater_path)
     
-    return crater_path
+    img_name_2 = path_arr[len(path_arr) - 1].split('.')[0] + '_combined_craters.png'
+    combined_craters_path = path_arr[:len(img_path.split('/'))-1]
+    combined_craters_path = '/'.join(combined_craters_path)
+    combined_craters_path += '/' + img_name_2
+    contours = group_craters(crater_lst, ml_img, ml_img_ORIG, combined_craters_path)
+    
+    return [combined_craters_path, contours]
     

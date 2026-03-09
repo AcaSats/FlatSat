@@ -46,7 +46,7 @@ def git_push():
         print('added remote')
         origin.pull()
         print('pulled changes')
-        repo.git.add(REPO_PATH + FOLDER_PATH)
+        repo.git.add(REPO_PATH) # + FOLDER_PATH
         repo.index.commit('New Photo')
         print('made the commit')
         origin.push()
@@ -61,7 +61,7 @@ def img_gen(name):
     Parameters:
         name (str): your name ex. MasonM
     """
-    t = time.strftime("_%H%M%S")
+    t = time.strftime("_%y_%m_%d_%H%M%S")
     imgname = (f'{REPO_PATH}/{FOLDER_PATH}/{name}{t}.jpg')
     return imgname
 
@@ -76,7 +76,6 @@ def take_photo():
     name = "CarissaP"
     img_name = img_gen(name)
     picam2.start_and_capture_file(img_name)
-    git_push()
 
     time.sleep(1)
     return img_name
@@ -115,13 +114,27 @@ def capture(dir ='roll', target_angle = 30):
         #print(f"AccelX:{accelX:6.2f} accelY:{accelY:6.2f} AccelZ:{accelZ:6.2f} | "
         #  f"GyroX:{gyroX:6.2f} GyroY:{gyroY:6.2f} GyroZ:{gyroZ:6.2f}")
         
-        if dir == 'roll' and abs(roll_angle - target_angle) < 3:
-            img_name = take_photo();
-            # print('take photo');
-            
-            crater_path = crater_detection(img_name)
-            path_finding(crater_path);
-        time.sleep(delT);
+        #if dir == 'roll' and abs(roll_angle - target_angle) < 3:
+        img_name = take_photo();
+        
+        img_bgr = cv2.imread(img_name)
+        if img_bgr is None:
+            raise ValueError("Could not load the image.")
+        
+        # Turn the image into grayscale
+        img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+        gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+        
+        # CLAHE processing, blur image, and create an edge map
+        ml_img_ORIG = cv2.resize(img_bgr, (512, 512)) # bgr
+        ml_img = cv2.resize(gray, (512, 512)) # gray
+        
+        [crater_path, crater_contour] = crater_detection(img_name, ml_img_ORIG, ml_img)
+        path_finding(ml_img_ORIG, crater_path, crater_contour);
+        
+        git_push()
+        
+        time.sleep(20);
 
 if __name__ == '__main__':
     capture(*sys.argv[1:])
