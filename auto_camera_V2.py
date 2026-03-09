@@ -117,6 +117,7 @@ def capture(dir ='roll', target_angle = 30):
         #if dir == 'roll' and abs(roll_angle - target_angle) < 3:
         take_photo();
         git_push()
+        print('pushed to git')
         
         time.sleep(20);
 
