@@ -190,7 +190,7 @@ def path_finding(orig_img_path, crater_img_path, crater_contour): # path to mark
     [mask_red, mask_green] = process_img(combined_POI_path)
     
     path_arr = crater_img_path.split('/')
-    img_name = path_arr[len(path_arr) - 1].split('.')[0] + '_combined_craters_and_POI.png'
+    img_name = path_arr[len(path_arr) - 1].split('.')[0] + '_path.png'
     file_path_to_path = path_arr[:len(crater_img_path.split('/'))-1]
     file_path_to_path = '/'.join(file_path_to_path)
     file_path_to_path += '/' + img_name
