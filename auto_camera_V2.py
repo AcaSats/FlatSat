@@ -125,7 +125,7 @@ def capture(dir ='roll', target_angle = 30):
         img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
         gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
         
-        # CLAHE processing, blur image, and create an edge map
+        # image in grayscale and bgr
         ml_img_ORIG = cv2.resize(img_bgr, (512, 512)) # bgr
         ml_img = cv2.resize(gray, (512, 512)) # gray
         

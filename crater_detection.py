@@ -146,6 +146,7 @@ def group_craters(crater_lst, ml_img, ml_img_ORIG, img_path): # group overlappin
     return contours
 
 def crater_detection(img_path, ml_img_ORIG, ml_img):
+    # CLAHE processing, blur image, and create an edge map
     ml_clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8)).apply(ml_img)
     ml_blur = cv2.GaussianBlur(ml_clahe, (9, 9), 0)
 

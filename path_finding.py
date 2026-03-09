@@ -1,9 +1,20 @@
 import heapq
 import numpy as np
 import cv2
+import matplotlib.pyplot as plt
 
 def get_POI(ml_img_ORIG, combined_crater_img_path, img_path, contours): # Get points of interest
     combined_crater_img = cv2.imread(combined_crater_img_path)
+    plt.figure(figsize=(6, 6))
+    plt.imshow(ml_img_ORIG)
+    plt.title("img")
+    plt.axis("off")
+    plt.show()
+    plt.figure(figsize=(6, 6))
+    plt.imshow(combined_crater_img)
+    plt.title("craters")
+    plt.axis("off")
+    plt.show()
     
     # Get original point of interest
     hsv = cv2.cvtColor(ml_img_ORIG, cv2.COLOR_BGR2HSV)
@@ -22,6 +33,7 @@ def get_POI(ml_img_ORIG, combined_crater_img_path, img_path, contours): # Get po
     kernel = np.ones((12, 12), np.uint8)
     dilated_mask = cv2.dilate(POI_mask_red, kernel, iterations=1)
     orig_POI_contour, _ = cv2.findContours(dilated_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    print(orig_POI_contour)
 
     if (len(orig_POI_contour) < 2): # if not two points of interest, search for largest crater
         # Find point of interest (biggest circled boundary)
